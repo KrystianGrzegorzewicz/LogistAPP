@@ -1,6 +1,32 @@
 import sys
 import csv
+import os
 import graphviz
+
+def setup_graphviz_path():
+    """
+    Dodaje folder 'bin' Graphviz do PATH tak, aby 'dot.exe' był widoczny
+    zarówno w środowisku developerskim, jak i po spakowaniu PyInstallerem.
+    """
+    # Sprawdzenie, czy skrypt jest spakowany w PyInstaller
+    if getattr(sys, 'frozen', False):
+        base_path = sys._MEIPASS  # PyInstaller ekstraktuje pliki tu
+    else:
+        base_path = os.path.dirname(os.path.abspath(__file__))
+
+    # Zakładamy, że Graphviz jest w folderze obok app.py lub EXE
+    dot_bin_path = os.path.join(base_path, "graphviz", "bin")
+
+    if os.path.exists(dot_bin_path):
+        os.environ["PATH"] = dot_bin_path + os.pathsep + os.environ.get("PATH", "")
+    else:
+        raise FileNotFoundError(
+            f"Nie znaleziono folderu 'bin' Graphviz w {dot_bin_path}. "
+            "Upewnij się, że Graphviz został wypakowany poprawnie."
+        )
+
+# Wywołanie funkcji przy starcie
+setup_graphviz_path()
 
 from PySide6.QtWidgets import (
     QApplication,
