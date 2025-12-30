@@ -5,7 +5,28 @@ from PySide6.QtWidgets import (
 )
 from cpm import compute_cpm
 
+INITIAL_TASKS = [
+    {"name": "A", "duration": 3, "start": 1, "end": 2},
+    {"name": "B", "duration": 4, "start": 2, "end": 3},
+    {"name": "C", "duration": 6, "start": 2, "end": 4},
+    {"name": "D", "duration": 7, "start": 3, "end": 5},
+    {"name": "E", "duration": 1, "start": 5, "end": 7},
+    {"name": "F", "duration": 2, "start": 4, "end": 7},
+    {"name": "G", "duration": 3, "start": 4, "end": 6},
+    {"name": "H", "duration": 4, "start": 6, "end": 7},
+    {"name": "I", "duration": 1, "start": 7, "end": 8},
+    {"name": "J", "duration": 2, "start": 8, "end": 9},
+]
+
 class MainWindow(QMainWindow):
+    def load_tasks(self, tasks):
+        self.table.setRowCount(len(tasks))
+        for r, t in enumerate(tasks):
+            self.table.setItem(r, 0, QTableWidgetItem(t["name"]))
+            self.table.setItem(r, 1, QTableWidgetItem(str(t["duration"])))
+            self.table.setItem(r, 2, QTableWidgetItem(str(t["start"])))
+            self.table.setItem(r, 3, QTableWidgetItem(str(t["end"])))
+
     def __init__(self):
         super().__init__()
         self.setWindowTitle("CPM GUI")
@@ -27,7 +48,11 @@ class MainWindow(QMainWindow):
         w = QWidget()
         w.setLayout(layout)
         self.setCentralWidget(w)
+        
+        self.load_tasks(INITIAL_TASKS)
+        self.recompute()
 
+    
     def add_row(self):
         self.table.insertRow(self.table.rowCount())
 
