@@ -1,44 +1,56 @@
 import networkx as nx
-import graphviz
 
 def compute_cpm(tasks):
     """
-    tasks = list of dicts:
-    {name, duration, start, end}
+    tasks = list of dicts: {name, duration, start, end}
+    Zwraca:
+    {
+        'EET': {...},   # Earliest Event Time
+        'LET': {...},   # Latest Event Time
+        'Slack': {...}, # Slack dla eventów
+        'critical': [...] # nazwy czynności krytycznych
+    }
     """
 
-    G = nx.DiGraph()
-
+    # 1. Zbiór wszystkich zdarzeń
+    events = set()
     for t in tasks:
-        G.add_node(t["name"], duration=t["duration"])
+        events.add(t["start"])
+        events.add(t["end"])
+    events = sorted(events)
 
-    # precedencje z eventów
+    # 2. Forward (EET)
+    EET = {e: 0 for e in events}
+    for e in events:
+        # znajdź wszystkie czynności kończące się w e
+        incoming = [t for t in tasks if t["end"] == e]
+        if incoming:
+            EET[e] = max(EET[t["start"]] + t["duration"] for t in incoming)
+
+    # 3. Backward (LET)
+    LET = {e: float('inf') for e in events}
+    LET[max(events)] = EET[max(events)]
+    for e in reversed(events):
+        outgoing = [t for t in tasks if t["start"] == e]
+        if outgoing:
+            LET[e] = min(LET[t["end"]] - t["duration"] for t in outgoing)
+        if LET[e] == float('inf'):
+            LET[e] = EET[e]  # jeśli brak outgoing, LET = EET
+
+    # 4. Slack dla eventów
+    Slack = {e: LET[e] - EET[e] for e in events}
+
+    # 5. Ścieżka krytyczna czynności
+    critical = []
     for t in tasks:
-        for p in tasks:
-            if p["end"] == t["start"]:
-                G.add_edge(p["name"], t["name"])
-
-    # forward
-    ES, EF = {}, {}
-    for n in nx.topological_sort(G):
-        ES[n] = max([EF[p] for p in G.predecessors(n)], default=0)
-        EF[n] = ES[n] + G.nodes[n]["duration"]
-
-    # backward
-    LS, LF = {}, {}
-    end_time = max(EF.values())
-    for n in reversed(list(nx.topological_sort(G))):
-        LF[n] = min([LS[c] for c in G.successors(n)], default=end_time)
-        LS[n] = LF[n] - G.nodes[n]["duration"]
-
-    slack = {n: LS[n] - ES[n] for n in G.nodes}
-    critical = {n for n, s in slack.items() if s == 0}
+        if Slack[t["start"]] == 0 and Slack[t["end"]] == 0:
+            # sprawdzamy czy EET+duration = EET następnego węzła
+            if EET[t["start"]] + t["duration"] == EET[t["end"]]:
+                critical.append(t["name"])
 
     return {
-        "ES": ES,
-        "EF": EF,
-        "LS": LS,
-        "LF": LF,
-        "slack": slack,
+        "EET": EET,
+        "LET": LET,
+        "Slack": Slack,
         "critical": critical
     }
