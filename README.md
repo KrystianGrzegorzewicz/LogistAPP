@@ -16,6 +16,18 @@ PySide6
 networkx
 graphviz
 ```
+```
+pip install pyside6 networkx graphviz
+```
 `https://graphviz.org/download/#windows`
 
 Uruchom `python .\app.py`
+
+Do stworzenia EXE
+Wymagania 
+```
+pip install pyinstaller
+```
+```
+pyinstaller --noconfirm --windowed --onefile --add-data "graphviz;graphviz" --add-data "samples;samples" app.py
+```
